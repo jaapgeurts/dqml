@@ -5,6 +5,7 @@ public import dqml.qvariant;
 public import dqml.qguiapplication;
 public import dqml.qapplication;
 public import dqml.qqmlcontext;
+public import dqml.qqmlextensionplugin;
 public import dqml.qobject;
 public import dqml.qqmlapplicationengine;
 public import dqml.qquickview;

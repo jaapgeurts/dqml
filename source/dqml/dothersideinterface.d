@@ -43,6 +43,9 @@ extern(C)
     char* dos_qqmlcontext_baseUrl(void*);
     void  dos_qqmlcontext_setcontextproperty(void*, immutable (char)*, void*);
 
+    // QQmlExtensionPlugin
+   void dos_qqmlextensionplugin_initializeEngine(void*, void*, void*);
+
     // QVariant
     void*  dos_qvariant_create();
     void*  dos_qvariant_create_int(int);
@@ -107,7 +110,7 @@ extern(C)
     void  dos_qhash_int_qbytearray_insert(void*, int, immutable(char)*);
     char* dos_qhash_int_qbytearray_value(void*, int);
 
-    
+
     struct DosQAbstractItemModelCallbacks
     {
         void function (void*, void*, ref int) rowCount;
@@ -123,7 +126,7 @@ extern(C)
         void function (void*, void*, ref bool) canFetchMore;
         void function (void*, void*) fetchMore;
     }
-    
+
     // QAbstractItemModel
     void* dos_qabstractitemmodel_qmetaobject();
     void* dos_qabstractitemmodel_create(void*, void*,
@@ -155,20 +158,20 @@ extern(C)
     void* dos_qabstractlistmodel_create(void*, void*,
                                         void function (void*, void*, int, void**),
                                         const ref DosQAbstractItemModelCallbacks callbacks);
-                                        
+
     void* dos_qabstractlistmodel_index(void *vptr, int row, int column, void* parentIndex);
     void* dos_qabstractlistmodel_parent(void *vptr, void* childIndex);
     int   dos_qabstractlistmodel_columnCount(void *vptr, void* parentIndex);
-    
+
     // QAbstractTableModel
     void* dos_qabstracttablemodel_qmetaobject();
     void* dos_qabstracttablemodel_create(void*, void*,
                                          void function (void*, void*, int, void**),
                                          const ref DosQAbstractItemModelCallbacks callbacks);
-                                        
+
     void* dos_qabstracttablemodel_index(void *vptr, int row, int column, void* parentIndex);
     void* dos_qabstracttablemodel_parent(void *vptr, void* childIndex);
-    
+
     // QResource
     void dos_qresource_register(immutable(char)* filename);
 
@@ -176,14 +179,14 @@ extern(C)
     void* dos_qurl_create(immutable(char)*, int);
     void  dos_qurl_delete(void*);
     char* dos_qurl_to_string(void* vptr);
-    
+
     // QMetaObjectFactory
     struct DosParameterDefinition
     {
         immutable(char)* name;
         int metaType;
     }
-    
+
     struct DosSignalDefinition
     {
         immutable(char)* name;

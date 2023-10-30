@@ -5,6 +5,7 @@
     "authors": ["Filippo Cucchetto"],
     "targetPath": "bin",
     "copyFiles": ["source/app.qml"],
+    "lflags": ["-L/home/jaapg/tmp/testgui/dotherside/build/lib"],
     "dependencies": {
         "dqml":{"version":"~master", "path":"../../"}
     }
