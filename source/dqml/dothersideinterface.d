@@ -26,6 +26,12 @@ extern(C)
     void* dos_qqmlapplicationengine_context(void*);
     void  dos_qqmlapplicationengine_delete(void*);
 
+    // QQmlEngine
+    void* dos_qqmlengine_create();
+    void  dos_qqmlengine_add_import_path(void* vptr, immutable (char)* path);
+    void* dos_qqmlengine_context(void*);
+    void  dos_qqmlengine_delete(void*);
+
     // QQuickView
     void* dos_qquickview_create();
     void  dos_qquickview_show(void*);
