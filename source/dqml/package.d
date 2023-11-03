@@ -19,6 +19,8 @@ public import dqml.qurl;
 public import dqml.qresource;
 public import dqml.qmetaobject;
 public import dqml.qdeclarative;
+public import dqml.qqmlengine;
+
 public import std.traits;
 public import std.algorithm;
 public import std.stdio;

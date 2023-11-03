@@ -26,12 +26,6 @@ extern(C)
     void* dos_qqmlapplicationengine_context(void*);
     void  dos_qqmlapplicationengine_delete(void*);
 
-    // QQmlEngine
-    void* dos_qqmlengine_create();
-    void  dos_qqmlengine_add_import_path(void* vptr, immutable (char)* path);
-    void* dos_qqmlengine_context(void*);
-    void  dos_qqmlengine_delete(void*);
-
     // QQuickView
     void* dos_qquickview_create();
     void  dos_qquickview_show(void*);
@@ -50,7 +44,17 @@ extern(C)
     void  dos_qqmlcontext_setcontextproperty(void*, immutable (char)*, void*);
 
     // QQmlExtensionPlugin
-   void dos_qqmlextensionplugin_initializeEngine(void*, void*, void*);
+   //void dos_qqmlextensionplugin_initializeEngine(void*, void*, void*);
+    void* dos_qqmlextensionplugin_create(void* ,
+// TODO: add meta object support
+//    void*,
+ //                                           void function (void*, void*, int, void**),
+                                            const ref DosQQmlExtensionPluginCallbacks callbacks);
+
+    struct DosQQmlExtensionPluginCallbacks
+    {
+        void function (void*,void*) registerTypes;
+    }
 
     // QVariant
     void*  dos_qvariant_create();
@@ -135,7 +139,8 @@ extern(C)
 
     // QAbstractItemModel
     void* dos_qabstractitemmodel_qmetaobject();
-    void* dos_qabstractitemmodel_create(void*, void*,
+    void* dos_qabstractitemmodel_create(void*,
+                                      void*,
                                         void function (void*, void*, int, void**),
                                         const ref DosQAbstractItemModelCallbacks callbacks);
     void  dos_qabstractitemmodel_beginInsertRows(void* vptr, void* parent, int first, int last);

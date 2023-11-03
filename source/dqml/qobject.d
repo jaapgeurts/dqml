@@ -62,7 +62,7 @@ public class QObject
     {
         return staticMetaObject();
     }
-    
+
     protected void* createVoidPointer()
     {
         return dos_qobject_create(cast(void*)this,
@@ -193,7 +193,7 @@ public class QObject
             return disconnect!slot(sender, signalName, this);
         }
     }
-    
+
     private void destroyVoidPointer(void* vptr)
     {
         dos_qobject_delete(vptr);

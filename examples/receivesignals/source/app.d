@@ -3,8 +3,10 @@ import dqml;
 import sender;
 import receiver;
 
+
 void main()
 {
+
 	auto app = new QApplication;
 	scope(exit) destroy(app);
 
