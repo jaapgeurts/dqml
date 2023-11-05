@@ -87,8 +87,6 @@ abstract class QQmlExtensionPlugin : QObject
 
     protected extern (C) static void registerTypesCallBack(void* pluginPtr, void* uriPtr)
     {
-
-
         auto plugin = cast(QQmlExtensionPlugin)(pluginPtr);
         string uri = to!string(cast(char*) uriPtr);
         plugin.registerTypes(uri);

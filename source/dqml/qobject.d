@@ -201,7 +201,10 @@ public class QObject
 
     protected void* vptr;
     protected bool vptrOwned;
-    private static QMetaObject m_staticMetaObject;
+    // JAAPG:
+    // static is not global because Dlang has a different "global" space per
+    // thread. __gshared is truly static global
+    private __gshared QMetaObject m_staticMetaObject;
 }
 
 enum FindChildOptions : int

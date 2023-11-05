@@ -223,10 +223,10 @@ public static QtInfo GetQtUDA(T)()
                 info.mangle = __traits(getMember, T, member).mangleof;
                 info.name = member;
                 info.returnType = ReturnType!(__traits(getMember, T, member)).stringof;
-                
+
                 foreach (param; ParameterIdentifierTuple!(__traits(getMember, T, member)))
                     info.parameterNames ~= param.stringof;
-                
+
                 foreach (param; Parameters!(__traits(getMember, T, member)))
                     info.parameterTypes ~= param.stringof;
 
@@ -244,9 +244,11 @@ public static QtInfo GetQtUDA(T)()
 
 public static string GenerateMetaObject(string qobjectSuperClassName, QtInfo info)
 {
+// JAAPG:
+// replace static variables with __gshared static
     string result =
         "shared static this() { m_staticMetaObject = createMetaObject(); }\n" ~
-        "private static QMetaObject m_staticMetaObject;\n" ~
+        "private __gshared QMetaObject m_staticMetaObject;\n" ~
         "public static QMetaObject staticMetaObject() { return m_staticMetaObject; }\n" ~
         "public override QMetaObject metaObject() { return staticMetaObject(); }\n"~
         "private static QMetaObject createMetaObject() {\n" ~
