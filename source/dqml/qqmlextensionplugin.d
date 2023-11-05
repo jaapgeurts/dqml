@@ -33,36 +33,67 @@ byte qPluginArchRequirements()
 }*/
 }
 
-/+
+char[] encodeStringToCBOR(string inputString) {
+    size_t strLen = inputString.length;
+
+    char[] cborArray;
+
+    size_t index = 0;
+
+    // Write CBOR major type for a string (3)
+    if (strLen < 24) {
+        cborArray ~= format("\\x%0.2x",cast(char)(0b011_00000 | strLen));
+    } else if (strLen < 256) {
+        cborArray ~= format("\\x%0.2x",cast(char)0b011_00100); // Indefinite length for text
+        cborArray ~= format("\\x%0.2x",cast(char)strLen);
+    } else {
+        throw new Exception("Strings larger than 255 are not implemented");
+    }
+
+    // Copy the string data to the CBOR array
+    cborArray ~= inputString;
+
+    return cborArray.dup;
+}
+
 // TODO: fix this using mixins
-public static string GeneratePluginMetaInfo(string name ) {
-  return
-  //"import ldc.attributes;\n"~
-//    "@(section(\".qtmetadata\"))\n"~
+template GenerateMetaData(T) {
+
+  // For GCC
+  //@attribute("section",".qtmetadata") or
+  // For LDC2
+  // @section(".qtmetadata");
+
+    const char[] GenerateMetaData =
+    "import ldc.attributes;\n" ~
+    "@(section(\".qtmetadata\"))\n" ~
     "immutable char[100] qt_pluginMetaData = \"QTMETADATA !\\x00\\x05\\x0f\\x" ~
         format("%0.2x", qPluginArchRequirements()) ~
         "\\xbf" ~
-        "\\x02\\x78\\x28" ~ "org.qt-project.Qt.QQmlExtensionInterface" ~
-        "\\x03\\x73" ~ name ~
+        "\\x02" ~
+        "\\x78\\x28" ~ "org.qt-project.Qt.QQmlExtensionInterface" ~
+        "\\x03" ~
+        encodeStringToCBOR(T.stringof) ~
         "\\xff\";\n\n";
 }
 
-// TODO: change to typeinfo
-public static string GenerateInstanceCallback(string name) {
 
-return "QObject* qt_plugin_instance() {\n" ~
-    "  import core.runtime;\n"~
-    "  Runtime.initialize();\n"~
-    "  return cast(QObject*) new " ~ name ~ "().voidPointer();\n"~
-    "}\n";
-}
-
-public template QML_PLUGIN(T)
+mixin template PluginMetaData(T : QQmlExtensionPlugin) {
+extern (C) QObject* qt_plugin_instance()
 {
-  const char[] QML_PLUGIN = GeneratePluginMetaInfo(T.stringof) ~
-        GenerateInstanceCallback(T.stringof);
+    import core.runtime;
+    import core.memory;
+
+    Runtime.initialize();
+    // TODO: add to GC root?
+    //GC.disable();
+    T plugin = new T;
+    return cast(QObject*) plugin.voidPointer();
+  }
+
+  pragma(msg,GenerateMetaData!MqttPlugin);
+  mixin(GenerateMetaData!MqttPlugin);
 }
-+/
 
 abstract class QQmlExtensionPlugin : QObject
 {
