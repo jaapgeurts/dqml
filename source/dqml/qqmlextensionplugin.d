@@ -79,7 +79,7 @@ template GenerateMetaData(T) {
 
 
 mixin template PluginMetaData(T : QQmlExtensionPlugin) {
-extern (C) QObject* qt_plugin_instance()
+extern (C) void* qt_plugin_instance()
 {
     import core.runtime;
     import core.memory;
@@ -88,10 +88,10 @@ extern (C) QObject* qt_plugin_instance()
     // TODO: add to GC root?
     //GC.disable();
     T plugin = new T;
-    return cast(QObject*) plugin.voidPointer();
+    return plugin.voidPointer();
   }
 
-  pragma(msg,GenerateMetaData!MqttPlugin);
+//  pragma(msg,GenerateMetaData!MqttPlugin);
   mixin(GenerateMetaData!MqttPlugin);
 }
 
@@ -104,6 +104,7 @@ abstract class QQmlExtensionPlugin : QObject
     {
         DosQQmlExtensionPluginCallbacks callbacks;
         callbacks.registerTypes = &registerTypesCallBack;
+        callbacks.initializeEngine = &initializeEngineCallback;
 
         return this.vptr = dos_qqmlextensionplugin_create(cast(void*) this,// TODO: add meta object support
                 //                                                         metaObject().voidPointer(),
@@ -112,9 +113,17 @@ abstract class QQmlExtensionPlugin : QObject
 
     }
 
-    void initializeEngine(QQmlEngine engine, QUrl url);
+    void initializeEngine(QQmlEngine engine, string uri);
 
     void registerTypes(string uri);
+
+    protected extern(C) static void initializeEngineCallback(void *pluginPtr, void* enginePtr, void* uriPtr)
+    {
+        auto plugin = cast(QQmlExtensionPlugin)(pluginPtr);
+        auto engine = cast(QQmlEngine)(enginePtr);
+        string uri = to!string(cast(char*) uriPtr);
+        plugin.initializeEngine(engine, uri);
+    }
 
     protected extern (C) static void registerTypesCallBack(void* pluginPtr, void* uriPtr)
     {

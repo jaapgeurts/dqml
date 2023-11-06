@@ -54,6 +54,7 @@ extern(C)
     struct DosQQmlExtensionPluginCallbacks
     {
         void function (void*,void*) registerTypes;
+        void function (void*, void*, void*) initializeEngine;
     }
 
     // QVariant
