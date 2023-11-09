@@ -12,13 +12,13 @@ ApplicationWindow {
 
     Connections {
         target: receiver
-        function onMessageReceived(message) {
+        onMessageReceived: {
             var date = new Date()
             var text = date.getHours()
                 + ":" + date.getMinutes()
                 + ":" + date.getSeconds()
                 + ":" + date.getMilliseconds()
-             //   + " - " + message + "\n"
+                + " - " + message + "\n"
             textArea.append(text)
         }
     }

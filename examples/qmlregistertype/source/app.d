@@ -12,7 +12,6 @@ void main()
         scope(exit) destroy(app);
 
         int result = qmlRegisterType!Contact("ContactModule", 1, 0, "Contact");
-        writeln("Result: " ,result);
 
         auto engine = new QQmlApplicationEngine();
         scope(exit) destroy(engine);

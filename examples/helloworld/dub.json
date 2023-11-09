@@ -4,7 +4,6 @@
     "copyright": "Copyright © 2016, Filippo Cucchetto",
     "authors": ["Filippo Cucchetto"],
     "targetPath": "bin",
-    "lflags": ["-L/home/jaapg/tmp/testgui/dotherside/build/lib"],
     "copyFiles": ["source/app.qml"],
     "dependencies": {
         "dqml":{"version":"~master","path":"../../"}

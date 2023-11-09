@@ -10,7 +10,6 @@ class Contact : QObject
     {
         this.m_firstName = firstName;
         this.m_lastName = lastName;
-
     }
 
     @QtSlot()

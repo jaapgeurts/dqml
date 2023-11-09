@@ -2,15 +2,13 @@ import dqml;
 import sender;
 import std.stdio;
 
-
 class Receiver : QObject
 {
     mixin Q_OBJECT;
 
 	public void register(Sender sender)
 	{
-//		connect!(receive)(sender, "broadcast");
-		connect(sender,"broadcast", this, "receive");
+		connect!receive(sender, "broadcast");
 	}
 
 	@QtSlot()

@@ -14,7 +14,7 @@ class QQuickView
 
     ~this()
     {
-        this.vptr = null;
+        dos_qquickview_delete(this.vptr);
     }
 
     public void* voidPointer()

@@ -41,7 +41,6 @@ class Sender : QObject
     {
         if(cas(&m_broadcasting, false, true))
             new Thread(&workerFunc).start();
-        //broadcast(m_message);
     }
 
 	@QtSlot()
