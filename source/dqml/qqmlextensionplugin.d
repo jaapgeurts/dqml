@@ -17,7 +17,7 @@ import dqml.qqmlengine;
 byte qPluginArchRequirements()
 {
     return 0;
-/*
+    /*
 {
     return 0
 #ifndef QT_NO_DEBUG
@@ -33,7 +33,8 @@ byte qPluginArchRequirements()
 }*/
 }
 
-char[] encodeStringToCBOR(string inputString) {
+char[] encodeStringToCBOR(string inputString)
+{
     size_t strLen = inputString.length;
 
     char[] cborArray;
@@ -41,12 +42,17 @@ char[] encodeStringToCBOR(string inputString) {
     size_t index = 0;
 
     // Write CBOR major type for a string (3)
-    if (strLen < 24) {
-        cborArray ~= format("\\x%0.2x",cast(char)(0b011_00000 | strLen));
-    } else if (strLen < 256) {
-        cborArray ~= format("\\x%0.2x",cast(char)0b011_00100); // Indefinite length for text
-        cborArray ~= format("\\x%0.2x",cast(char)strLen);
-    } else {
+    if (strLen < 24)
+    {
+        cborArray ~= format("\\x%0.2x", cast(char)(0b011_00000 | strLen));
+    }
+    else if (strLen < 256)
+    {
+        cborArray ~= format("\\x%0.2x", cast(char) 0b011_00100); // Indefinite length for text
+        cborArray ~= format("\\x%0.2x", cast(char) strLen);
+    }
+    else
+    {
         throw new Exception("Strings larger than 255 are not implemented");
     }
 
@@ -56,71 +62,94 @@ char[] encodeStringToCBOR(string inputString) {
     return cborArray.dup;
 }
 
-// TODO: fix this using mixins
-template GenerateMetaData(T) {
-
-  // For GCC
-  //@attribute("section",".qtmetadata") or
-  // For LDC2
-  // @section(".qtmetadata");
-
-    const char[] GenerateMetaData =
-    "import ldc.attributes;\n" ~
-    "@(section(\".qtmetadata\"))\n" ~
-    "immutable char[100] qt_pluginMetaData = \"QTMETADATA !\\x00\\x05\\x0f\\x" ~
-        format("%0.2x", qPluginArchRequirements()) ~
-        "\\xbf" ~
-        "\\x02" ~
-        "\\x78\\x28" ~ "org.qt-project.Qt.QQmlExtensionInterface" ~
-        "\\x03" ~
-        encodeStringToCBOR(T.stringof) ~
-        "\\xff\";\n\n";
-}
-
-
-mixin template PluginMetaData(T : QQmlExtensionPlugin) {
-extern (C) void* qt_plugin_instance()
-{
-    import core.runtime;
-    import core.memory;
-
-    Runtime.initialize();
-    // TODO: add to GC root?
-    //GC.disable();
-    T plugin = new T;
-    return plugin.voidPointer();
-  }
-
-//  pragma(msg,GenerateMetaData!MqttPlugin);
-  mixin(GenerateMetaData!MqttPlugin);
-}
-
-abstract class QQmlExtensionPlugin : QObject
+template GenerateMetaData(T)
 {
 
-    mixin Q_OBJECT;
+    const char[] GenerateMetaData = "@section(\".qtmetadata\")\n"
+        ~ "immutable char[100] qt_pluginMetaData = \"QTMETADATA !\\x00\\x05\\x0f\\x"
+        ~ format("%0.2x", qPluginArchRequirements()) ~ "\\xbf"
+        ~ "\\x02" ~ "\\x78\\x28" ~ "org.qt-project.Qt.QQmlExtensionInterface"
+        ~ "\\x03" ~ encodeStringToCBOR(T.stringof) ~ "\\xff\";\n\n";
+}
 
-    protected override void* createVoidPointer()
+mixin template PluginMetaData(T : QQmlExtensionPlugin)
+{
+    extern (C) void* qt_plugin_instance()
+    {
+        import core.runtime;
+        import core.memory;
+
+        // initialize the D runtime
+        rt_init();
+
+        // add root to GC
+        // GC.disable();
+        // return cast(void*)new QQmlExtensionPlugin();
+
+        T plugin = new T();
+        GC.addRoot(cast(void*) plugin);
+        GC.setAttr(cast(void*) plugin, GC.BlkAttr.NO_MOVE);
+        return plugin.voidPointer();
+    }
+
+    pragma(msg, GenerateMetaData!MqttPlugin);
+    version (GNU)
+    {
+        import gcc.attributes;
+    }
+    version (LDC2)
+    {
+        import ldc.attributes;
+    }
+    mixin(GenerateMetaData!MqttPlugin);
+}
+
+class QQmlExtensionPlugin
+{
+
+    this()
     {
         DosQQmlExtensionPluginCallbacks callbacks;
         callbacks.registerTypes = &registerTypesCallBack;
         callbacks.initializeEngine = &initializeEngineCallback;
 
-        return this.vptr = dos_qqmlextensionplugin_create(cast(void*) this,// TODO: add meta object support
-                //                                                         metaObject().voidPointer(),
-                //                                                         &staticSlotCallback,
+        vptr = dos_qqmlextensionplugin_create(cast(void*) this, // TODO: add meta object support
+                // metaObject().voidPointer(),
+                // &staticSlotCallback,
                 callbacks);
 
     }
 
-    void initializeEngine(QQmlEngine engine, string uri);
+    ~this()
+    {
+        import std.stdio;
 
-    void registerTypes(string uri);
+        writeln("DSide destruct");
+        //dos_qqmlextensionplugin_delete(vptr);
+    }
 
-    protected extern(C) static void initializeEngineCallback(void *pluginPtr, void* enginePtr, void* uriPtr)
+    public void* voidPointer()
+    {
+        return this.vptr;
+    }
+
+    // TODO: empty body is required otherwise the function
+    // is not available at runtime.????
+    void initializeEngine(QQmlEngine engine, string uri)
+    {
+    }
+
+    // TODO: empty body is required otherwise the function
+    // is not available at runtime.????
+    void registerTypes(string uri)
+    {
+    }
+
+    protected extern (C) static void initializeEngineCallback(void* pluginPtr,
+            void* enginePtr, void* uriPtr)
     {
         auto plugin = cast(QQmlExtensionPlugin)(pluginPtr);
-        auto engine = cast(QQmlEngine)(enginePtr);
+        auto engine = new QQmlEngine(enginePtr);
         string uri = to!string(cast(char*) uriPtr);
         plugin.initializeEngine(engine, uri);
     }
@@ -132,4 +161,5 @@ abstract class QQmlExtensionPlugin : QObject
         plugin.registerTypes(uri);
     }
 
+    private void* vptr;
 }
