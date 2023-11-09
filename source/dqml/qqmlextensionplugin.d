@@ -97,7 +97,7 @@ mixin template PluginMetaData(T : QQmlExtensionPlugin)
     {
         import gcc.attributes;
     }
-    version (LDC2)
+    version (LDC)
     {
         import ldc.attributes;
     }
