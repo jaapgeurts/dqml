@@ -72,27 +72,37 @@ template GenerateMetaData(T)
         ~ "\\x03" ~ encodeStringToCBOR(T.stringof) ~ "\\xff\";\n\n";
 }
 
+
+
 mixin template PluginMetaData(T : QQmlExtensionPlugin)
 {
-    extern (C) void* qt_plugin_instance()
-    {
-        import core.runtime;
-        import core.memory;
+    extern(C) {
 
-        // initialize the D runtime
-        rt_init();
+        void init_runtime_cb() {
+            import core.runtime;
+            import std.stdio;
 
-        // add root to GC
-        // GC.disable();
-        // return cast(void*)new QQmlExtensionPlugin();
+            // // initialize the D runtime
+            // call back to QT side to execute function on main thread which initializes the D runtime
 
-        T plugin = new T();
-        GC.addRoot(cast(void*) plugin);
-        GC.setAttr(cast(void*) plugin, GC.BlkAttr.NO_MOVE);
-        return plugin.voidPointer();
+            // and wait until initialization is complete
+            rt_init();
+            writeln("Init runtime");
+        }
+
+        void* qt_plugin_instance()
+        {
+            import std.stdio;
+            writeln("D Side calling init");
+            dos_initialize_runtime(&init_runtime_cb);
+
+            T plugin = new T();
+            // GC.addRoot(cast(void*) plugin);
+            // GC.setAttr(cast(void*) plugin, GC.BlkAttr.NO_MOVE);
+            return plugin.voidPointer();
+        }
     }
-
-    pragma(msg, GenerateMetaData!MqttPlugin);
+    //pragma(msg, GenerateMetaData!MqttPlugin);
     version (GNU)
     {
         import gcc.attributes;
@@ -117,7 +127,6 @@ class QQmlExtensionPlugin
                 // metaObject().voidPointer(),
                 // &staticSlotCallback,
                 callbacks);
-
     }
 
     ~this()
@@ -163,3 +172,4 @@ class QQmlExtensionPlugin
 
     private void* vptr;
 }
+
