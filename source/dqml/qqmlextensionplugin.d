@@ -78,30 +78,26 @@ mixin template PluginMetaData(T : QQmlExtensionPlugin)
 {
     extern(C) {
 
-        void init_runtime_cb() {
+        void* qt_plugin_instance() @system
+        {
+            import dqml.dothersideinterface;
             import core.runtime;
             import std.stdio;
+            import core.thread;
 
-            // // initialize the D runtime
-            // call back to QT side to execute function on main thread which initializes the D runtime
-
-            // and wait until initialization is complete
+            // initialize the D runtime
             rt_init();
+            //thread_attachThis();
             writeln("Init runtime");
-        }
-
-        void* qt_plugin_instance()
-        {
-            import std.stdio;
-            writeln("D Side calling init");
-            dos_initialize_runtime(&init_runtime_cb);
 
             T plugin = new T();
             // GC.addRoot(cast(void*) plugin);
             // GC.setAttr(cast(void*) plugin, GC.BlkAttr.NO_MOVE);
             return plugin.voidPointer();
         }
+
     }
+
     //pragma(msg, GenerateMetaData!MqttPlugin);
     version (GNU)
     {
@@ -111,6 +107,7 @@ mixin template PluginMetaData(T : QQmlExtensionPlugin)
     {
         import ldc.attributes;
     }
+
     mixin(GenerateMetaData!MqttPlugin);
 }
 
@@ -123,7 +120,8 @@ class QQmlExtensionPlugin
         callbacks.registerTypes = &registerTypesCallBack;
         callbacks.initializeEngine = &initializeEngineCallback;
 
-        vptr = dos_qqmlextensionplugin_create(cast(void*) this, // TODO: add meta object support
+        vptr = dos_qqmlextensionplugin_create(cast(void*) this,
+                // TODO: add meta object support
                 // metaObject().voidPointer(),
                 // &staticSlotCallback,
                 callbacks);
@@ -134,7 +132,6 @@ class QQmlExtensionPlugin
         import std.stdio;
 
         writeln("DSide destruct");
-        //dos_qqmlextensionplugin_delete(vptr);
     }
 
     public void* voidPointer()
@@ -157,7 +154,7 @@ class QQmlExtensionPlugin
     protected extern (C) static void initializeEngineCallback(void* pluginPtr,
             void* enginePtr, void* uriPtr)
     {
-        auto plugin = cast(QQmlExtensionPlugin)(pluginPtr);
+        auto plugin = cast(QQmlExtensionPlugin)pluginPtr;
         auto engine = new QQmlEngine(enginePtr);
         string uri = to!string(cast(char*) uriPtr);
         plugin.initializeEngine(engine, uri);
@@ -165,7 +162,7 @@ class QQmlExtensionPlugin
 
     protected extern (C) static void registerTypesCallBack(void* pluginPtr, void* uriPtr)
     {
-        auto plugin = cast(QQmlExtensionPlugin)(pluginPtr);
+        auto plugin = cast(QQmlExtensionPlugin)pluginPtr;
         string uri = to!string(cast(char*) uriPtr);
         plugin.registerTypes(uri);
     }
