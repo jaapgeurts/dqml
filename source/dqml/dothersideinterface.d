@@ -248,4 +248,5 @@ extern (C)
 
     int dos_qdeclarative_qmlregistertype(const ref DosQmlRegisterType args);
     int dos_qdeclarative_qmlregistersingletontype(const ref DosQmlRegisterType args);
+
 }
