@@ -120,6 +120,7 @@ public class QMetaObject
         return this.vptr;
     }
 
+    // TODO: Improve this by allowing the void* data to specified using a template argument instead.
     private struct CallBackData {
           void function(void*data) cb;
           void* data;
