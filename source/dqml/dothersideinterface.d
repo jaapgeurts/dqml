@@ -1,5 +1,7 @@
 module dqml.dothersideinterface;
 
+import dqml.qt;
+
 extern (C)
 {
     // QCoreApplication
@@ -234,6 +236,11 @@ extern (C)
             const ref DosSlotDefinitions slotDefinitions,
             const ref DosPropertyDefinitions propertyDefinitions);
     void dos_qmetaobject_delete(void*);
+
+    /***
+    * this callback will be called on the main thread
+    */
+    bool dos_qmetaobject_invoke_method(void* context, void function(void* callbackData) callback, void* callbackData, ConnectionType connection_type);
 
     struct DosQmlRegisterType
     {

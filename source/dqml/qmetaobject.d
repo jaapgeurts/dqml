@@ -1,11 +1,14 @@
 module dqml.qmetaobject;
 
 import dqml.dothersideinterface;
+import dqml.qobject;
 import dqml.qmetatype;
+import dqml.qt;
+
 import std.string;
 import core.stdc.stdlib;
 
-T* mallocArray(T)(int size) 
+T* mallocArray(T)(int size)
 {
     if (size == 0)
         return null;
@@ -19,7 +22,7 @@ public struct ParameterDefinition
         this.name = name;
         this.metaType = metaType;
     }
-    
+
     string name;
     QMetaType metaType;
 }
@@ -89,13 +92,13 @@ public class QMetaObject
 
         auto dosSignalDefinitions = mallocDefinitions(signalDefinitions);
         scope(exit) freeDefinitions(dosSignalDefinitions);
-        
+
         auto dosSlotDefinitions = mallocDefinitions(slotDefinitions);
         scope(exit) freeDefinitions(dosSlotDefinitions);
-        
+
         auto dosPropertyDefinitions = mallocDefinitions(propertyDefinitions);
         scope(exit) freeDefinitions(dosPropertyDefinitions);
-        
+
         this.vptr = dos_qmetaobject_create(superClass.vptr,
                                            className.toStringz(),
                                            dosSignalDefinitions,
@@ -116,13 +119,34 @@ public class QMetaObject
     {
         return this.vptr;
     }
-    
+
+    private struct CallBackData {
+          void function(void*data) cb;
+          void* data;
+    }
+
+    extern(C) static void callback(void *data) {
+        import core.memory;
+        CallBackData* cbdata = cast(CallBackData*)data;
+        cbdata.cb(cbdata.data);
+        GC.setAttr(cast(void*)data, GC.BlkAttr.NONE);
+        GC.removeRoot(data);
+    }
+
+    public static invokeMethod(QObject context, void function(void* data) cb, void* data, ConnectionType connectionType) {
+        import core.memory;
+        CallBackData* cbdata = new CallBackData(cb,data);
+        GC.addRoot(data);
+        GC.setAttr(cast(void*)data, GC.BlkAttr.NO_MOVE);
+        dos_qmetaobject_invoke_method(cast(void*)context.voidPointer(), &callback, cbdata , connectionType);
+    }
+
     private DosSignalDefinitions mallocDefinitions(SignalDefinition[] definitions)
     {
         DosSignalDefinitions result;
         result.count = cast(int)definitions.length;
         result.definitions = mallocArray!DosSignalDefinition(result.count);
-        
+
         for (int i = 0; i < result.count; ++i)
         {
             SignalDefinition signalProto = definitions[i];
@@ -138,23 +162,23 @@ public class QMetaObject
                 parameterDef.metaType = parameterProto.metaType;
             }
         }
-        
+
         return result;
     }
-    
-    private void freeDefinitions(DosSignalDefinitions definitions) 
+
+    private void freeDefinitions(DosSignalDefinitions definitions)
     {
         for (int i = 0; i < definitions.count; ++i)
             free((definitions.definitions + i).parameters);
         free(definitions.definitions);
     }
-    
+
     private DosSlotDefinitions mallocDefinitions(SlotDefinition[] definitions)
     {
         DosSlotDefinitions result;
         result.count = cast(int)definitions.length;
         result.definitions = mallocArray!DosSlotDefinition(result.count);
-        
+
         for (int i = 0; i < result.count; ++i)
         {
             SlotDefinition slotProto = definitions[i];
@@ -171,17 +195,17 @@ public class QMetaObject
                 parameterDef.metaType = parameterProto.metaType;
             }
         }
-        
+
         return result;
     }
-    
+
     private void freeDefinitions(DosSlotDefinitions definitions)
     {
         for (int i = 0; i < definitions.count; ++i)
             free((definitions.definitions + i).parameters);
         free(definitions.definitions);
     }
-    
+
     private DosPropertyDefinitions mallocDefinitions(PropertyDefinition[] definitions)
     {
         DosPropertyDefinitions result;
@@ -199,7 +223,7 @@ public class QMetaObject
         }
         return result;
     }
-    
+
     private void freeDefinitions(DosPropertyDefinitions definitions)
     {
         free(definitions.definitions);

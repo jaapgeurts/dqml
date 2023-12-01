@@ -8,6 +8,7 @@ import std.container;
 import std.traits;
 import std.string;
 import std.algorithm;
+import dqml.qt;
 import dqml.qmetaobject;
 import dqml.qobjectgenerators;
 import dqml.dothersideinterface;
@@ -213,15 +214,6 @@ enum FindChildOptions : int
     Recursively
 }
 
-enum ConnectionType : int
-{
-    Auto = 0,
-    Direct,
-    Queued,
-    BlockingQueued,
-
-    Unique = 0x80
-}
 
 template SIGNAL(alias slot)
 {
