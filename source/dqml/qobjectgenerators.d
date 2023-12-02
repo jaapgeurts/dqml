@@ -392,6 +392,6 @@ public mixin template Q_OBJECT()
         result ~= GenerateAutoImplementedProperties(info);
         return result;
     }
-    pragma(msg,GenerateCode);
+    // pragma(msg,GenerateCode);
     mixin(GenerateCode);
 }
