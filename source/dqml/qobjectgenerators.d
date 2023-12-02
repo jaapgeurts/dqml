@@ -4,6 +4,7 @@ import std.traits;
 import std.algorithm;
 import std.string;
 import std.stdio;
+import std.ascii : toUpper;
 
 struct QtPropertyData
 {
@@ -12,19 +13,33 @@ struct QtPropertyData
     public string read;
     public string write;
     public string notify;
+
+    public bool autoImplement;
 }
 
 struct QtProperty(T)
 {
     public QtPropertyData data;
 
-    this(string name, string read, string write, string notify)
+    this(string name, string read, string write, string notify, bool autoImplement = false)
     {
         data.type = T.stringof;
         data.name = name;
         data.read = read;
         data.write = write;
         data.notify = notify;
+        data.autoImplement = autoImplement;
+    }
+
+    // uses default names for property functions: yyy(), setYyy(), yyyChanged()
+    this(string name, bool autoImplement = true)
+    {
+        data.type = T.stringof;
+        data.name = name;
+        data.read = name;
+        data.write = "set"~toUpper(name[0])~name[1..$];
+        data.notify = name~"Changed";
+        data.autoImplement = autoImplement;
     }
 }
 
@@ -92,7 +107,7 @@ string GenerateOnSlotCalled(QtInfo info)
         result ~= GenerateCaseBlock(slot);
     result ~= "default: super.onSlotCalled(slotName, arguments);\n";
     result ~= "}\n"; //
-    result ~= "}";
+    result ~= "}\n";
     return result;
 }
 
@@ -119,6 +134,72 @@ string GenerateSignals(QtInfo info)
     string result = "";
     foreach (signal; info.signals)
         result ~= GenerateSignalCall(signal) ~ "\n";
+    return result;
+}
+
+void CollectAutoImplementedProperties(string fqdnOuterType, ref QtInfo qtinfo) {
+
+    // Loop through all properties and if they're auto implemented than add to list
+    foreach(QtPropertyData propData; qtinfo.properties) {
+        if (!propData.autoImplement)
+            continue;
+        
+        import core.demangle;
+
+        /*
+            public string read;
+            public string write;
+            public string notify;
+        */
+        // slot getter
+        FunctionInfo info;
+        info.mangle = mangle!(string function())(fqdnOuterType~"."~propData.read).idup;
+        info.name = propData.read;
+        info.returnType = propData.type;
+
+        qtinfo.slots ~= info;
+
+        // slot setter
+        info = FunctionInfo.init;
+        info.mangle = mangle!(void function(string))(fqdnOuterType~"."~propData.write).idup;
+        info.name = propData.write;
+        info.returnType = void.stringof;
+        info.parameterNames ~= "value".stringof;
+        info.parameterTypes ~= propData.type;
+
+        qtinfo.slots ~= info;
+
+        // signals
+        info = FunctionInfo.init;
+        info.mangle = mangle!(void function(string))(fqdnOuterType~"."~propData.notify).idup;
+        info.name = propData.notify;
+        info.returnType = void.stringof;
+        info.parameterNames ~= "value".stringof;
+        info.parameterTypes ~= propData.type;
+
+        qtinfo.signals ~= info;
+
+    }
+}
+
+
+string GenerateAutoImplementedProperties(QtInfo info) {
+    string result = "";
+
+    foreach(QtPropertyData propData; info.properties) {
+        if (!propData.autoImplement)
+            continue;
+
+        string capitalName = toUpper(propData.name[0]) ~ propData.name[1..$];
+        string fieldName = "m_"~capitalName;
+
+        result ~= "private "~propData.type~" " ~ fieldName ~ ";\n";
+        result ~= "public "~propData.type~" " ~propData.name~"() {\n"~
+                "\treturn "~fieldName~";\n}\n";
+        result ~= "public void set" ~capitalName~"("~propData.type~" value) {\n\t"
+                    ~ fieldName ~ " = value;\n\t"
+                    ~ propData.name~"Changed(value);\n}\n";
+    }
     return result;
 }
 
@@ -300,12 +381,17 @@ public mixin template Q_OBJECT()
     private static string GenerateCode()
     {
         alias outerType = typeof(this);
-        alias info = GetQtUDA!outerType;
+        QtInfo info = GetQtUDA!outerType;
+
+        CollectAutoImplementedProperties(outerType.mangleof,info);
+
         string result;
         result ~= GenerateMetaObject(QObjectSuperClass!outerType, info);
         result ~= GenerateOnSlotCalled(info);
         result ~= GenerateSignals(info);
+        result ~= GenerateAutoImplementedProperties(info);
         return result;
     }
+    pragma(msg,GenerateCode);
     mixin(GenerateCode);
 }
