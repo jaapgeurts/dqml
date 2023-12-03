@@ -90,9 +90,13 @@ public class QObject
         return QObject.disconnect(sender, signal, this, method);
     }
 
-    protected void emit(T)(string signalName, T t)
+    protected void emit(A...)(string signalName, A a)
     {
-        emit(signalName, new QVariant(t));
+        QVariant[] args = new QVariant[a.length];
+        foreach(i, t; a) {
+            args[i] = new QVariant(t);
+        }
+        emit(signalName, args);
     }
 
     protected void emit(string signalName, QVariant value)
